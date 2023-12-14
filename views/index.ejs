@@ -1,0 +1,215 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>MTGPaste</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="">
+        <link rel="stylesheet" href="https://mtgify.org/dist/autocard.css" />
+        <style>
+            body{
+                margin: 0;
+                background-color: black;
+                color: white;
+                font: 12px "M+ 1c", sans-serif;
+                padding: 20px;
+                height: 100vh;
+                overflow: hidden;
+            }
+            *{
+                font-family: monospace;
+                font-size: 14px;
+            }
+            a{
+                color: white;
+            }
+            .card{
+                display: flex;
+                flex-flow: row wrap;
+                align-items: flex-start;
+                width: 300px;
+            }
+            pre{
+                white-space: pre-wrap;       /* Since CSS 2.1 */
+                white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+                white-space: -pre-wrap;      /* Opera 4-6 */
+                white-space: -o-pre-wrap;    /* Opera 7 */
+                word-wrap: break-word;       /* Internet Explorer 5.5+ */
+                width: 150px;
+            }
+            .board{
+                width: 100%;
+                font-size: 20px;
+                border-bottom: 2px white dashed;
+            }
+            .card img{
+                height: 200px;
+            }
+            .name{
+                font-weight: 900;
+            }
+            #pastebox{
+                height: 100%;
+                width: 100%;
+                position:absolute;
+                top: 0px;
+                left: 0px;
+                border: none;
+                resize: none;
+                background: none;
+                color: white;
+            }
+            #authorInput{
+                position: absolute;
+                top: 40px;
+                right: 10px;
+                background: none;
+                color: white;
+                border: 1px solid white;
+                font-size: 15px;
+            }
+            #nameInput{
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                background: none;
+                color: white;
+                border: 1px solid white;
+                font-size: 15px;
+            }
+            #create{
+                position:absolute;
+                top: 70px;
+                right: 10px;
+            }
+            #home{
+                position:absolute;
+                top: 70px;
+                right: 10px;
+            }
+            input[type="file"] {
+                display: none;
+            }
+            .custom-file-upload {
+                border: 1px solid #ccc;
+                display: inline-block;
+                padding: 6px 12px;
+                cursor: pointer;
+                font-size: 12px;
+            }
+            .custom-file-upload:hover{
+                background: rgba(255,255,255,0.3);
+            }
+            button{
+                background: none;
+                color: white;
+                padding: 6px 12px;
+                border: 1px solid #ccc;
+                cursor: pointer;
+                font-size: 12px;
+            }
+            button:hover{
+                background: rgba(255,255,255,0.3);
+            }
+
+        </style>
+    </head>
+    <body>
+
+
+        <div id="deck_container"></div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js" integrity="sha512-pumBsjNRGGqkPzKHndZMaAG+bir374sORyzM3uulLV14lN5LyykqNk8eEeUlUkB3U0M4FApyaHraT65ihJhDpQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+        <script>
+            // ================= GLOBALS ================= //
+
+            function getList(){
+                var text = document.getElementById("pastebox").value;
+                CARDLIST = text;
+            }
+
+            // ================= RENDER CARDLIST FROM GLOBAL ================= //
+            function createDeck(){
+                let name = document.getElementById('nameInput').value;
+                let author = document.getElementById('authorInput').value;
+                let text = document.getElementById('pastebox').value;
+                jQuery.ajax({
+                    url: "/create",
+                    type: "POST",
+                    data: { 
+                        "name": name,
+                        "text": text,
+                        "id": "",
+                        "author": author
+                    },
+                    dataType: "json",
+                    success: function(result) {
+                        console.log(result);
+                        
+                    }
+                }); 
+            }
+            async function render_list(text,name,author){
+                document.getElementById("deck_container").innerHTML = "";
+                let cardlist = text.split('\n'); // get actual "list"
+                console.log(cardlist)
+
+                let maindeck_html = `<pre class='board'>${name}      <strong>${author}</strong></pre><button onclick="window.location.href = window.location.href.split('?')[0];" id='home'>Create New</button><br>`;
+                let sideboard_html = `<pre class='board'>Sideboard</pre><br>`;
+
+                // currently layout lines are removed
+                for (let card of cardlist){
+                    let attr = card.split(" ")
+                    if (attr.length > 2){
+                        quantity = attr.shift();
+                        set = attr.shift();
+                        name = attr.join(" ")
+                        maindeck_html += `<div><auto-card name="${name}">${quantity} ${set} ${name}</auto-card></div>`;
+                    }
+                }
+                // append new html to container
+                document.getElementById("deck_container").innerHTML += maindeck_html;
+            }
+
+            window.addEventListener("load", (event) => {
+                console.log("page is fully loaded");
+
+                const queryString = window.location.search;
+                const urlParams = new URLSearchParams(queryString);
+
+                if (urlParams.get('id') != null){ // if there is a deck id present
+                    let id = urlParams.get('id');
+                    $.ajax({ // api request using built in user data
+                        type: 'GET',
+                        url: '/fetch',
+                        data: {id: id},
+                        success: function(result) { 
+                            if (result != "" && result != null){
+                                CARDLIST = result.text;
+                                render_list(result.text,result.name,result.author);
+                            }
+                            else{
+                                document.getElementById("deck_container").innerHTML = "Decklist not found! Why not make one? <link>";
+                            }
+                        },
+                        error: function(xhr, status, err) {
+                            console.error("something went wrong...");
+                        }
+                    });
+                }
+                else{ // render builder
+                    let html = `<textarea type="text" id='pastebox' placeholder="Paste some cards" name="txtarea"></textarea>
+                    <input type="text" placeholder='Deck Name' id='nameInput'></>
+                    <input type="text" placeholder='Author Name' id='authorInput'></>
+                    <button onclick='createDeck()' id='create'>Create</button>`;
+                    document.getElementById("deck_container").innerHTML = html;
+                }
+
+            });
+            
+        </script>
+        
+        <script src="https://mtgify.org/dist/autocard.js"></script>
+    </body>
+</html>
