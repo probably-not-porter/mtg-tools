@@ -42,6 +42,12 @@
                 width: 100%;
                 font-size: 20px;
                 border-bottom: 2px white dashed;
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                -khtml-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
             }
             .card img{
                 height: 200px;
@@ -122,18 +128,24 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js" integrity="sha512-pumBsjNRGGqkPzKHndZMaAG+bir374sORyzM3uulLV14lN5LyykqNk8eEeUlUkB3U0M4FApyaHraT65ihJhDpQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         <script>
-            // ================= GLOBALS ================= //
-
             function getList(){
                 var text = document.getElementById("pastebox").value;
                 CARDLIST = text;
             }
 
-            // ================= RENDER CARDLIST FROM GLOBAL ================= //
+            // ================= CREATE NEW ================= //
             function createDeck(){
                 let name = document.getElementById('nameInput').value;
                 let author = document.getElementById('authorInput').value;
                 let text = document.getElementById('pastebox').value;
+
+                if (name == "" || name == null){
+                    name = "Untitled Decklist";
+                }
+                if (author == "" || author == null){
+                    author = "Unknown Author";
+                }
+
                 jQuery.ajax({
                     url: "/create",
                     type: "POST",
@@ -146,16 +158,17 @@
                     dataType: "json",
                     success: function(result) {
                         console.log(result);
-                        
+                        window.location = window.location.origin + `?id=${result}`
                     }
                 }); 
             }
+            // ================= RENDER CARDLIST ================= //
             async function render_list(text,name,author){
                 document.getElementById("deck_container").innerHTML = "";
                 let cardlist = text.split('\n'); // get actual "list"
                 console.log(cardlist)
 
-                let maindeck_html = `<pre class='board'>${name}      <strong>${author}</strong></pre><button onclick="window.location.href = window.location.href.split('?')[0];" id='home'>Create New</button><br>`;
+                let maindeck_html = `<pre class='board'>${name}      <strong>by ${author}</strong></pre><button onclick="window.location.href = window.location.href.split('?')[0];" id='home'>Create New</button><br>`;
                 let sideboard_html = `<pre class='board'>Sideboard</pre><br>`;
 
                 // currently layout lines are removed
@@ -172,9 +185,9 @@
                 document.getElementById("deck_container").innerHTML += maindeck_html;
             }
 
+            // ONLOAD
             window.addEventListener("load", (event) => {
                 console.log("page is fully loaded");
-
                 const queryString = window.location.search;
                 const urlParams = new URLSearchParams(queryString);
 
@@ -190,7 +203,7 @@
                                 render_list(result.text,result.name,result.author);
                             }
                             else{
-                                document.getElementById("deck_container").innerHTML = "Decklist not found! Why not make one? <link>";
+                                document.getElementById("deck_container").innerHTML = `Decklist not found! <a href="${window.location.origin}">Why not make one?</a>`;
                             }
                         },
                         error: function(xhr, status, err) {

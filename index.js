@@ -39,6 +39,6 @@ app.get('/', function(req, res) {
 
 app.use(express.static(__dirname + '/public'));
 
-app.listen(process.env.PORT || 3000, function(){
+app.listen(process.env.PORT || 9080, function(){
   console.log("Express server listening on port %d in %s mode", this.address().port, app.settings.env);
 });
