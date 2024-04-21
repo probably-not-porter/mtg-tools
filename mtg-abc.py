@@ -1,6 +1,6 @@
 # Search for combos for Now I Know My ABCs
 # https://gatherer.wizards.com/pages/card/Details.aspx?multiverseid=73959
-# python3 mtg-abc.py -i /storage/datasets/mtg-tcg/mtg-unique.json -n 10 -v 1000000 -m 5 -c W U B R G 
+# python3 mtg-abc.py -i /storage/datasets/mtg-tcg/all-cards.json
 import json
 from tqdm import tqdm
 import argparse
