@@ -1,9 +1,8 @@
 import json
+from tqdm import tqdm
+import argparse
 
-def find_replacement(name):
-    with open('/storage/datasets/mtg-tcg/mtg-all.json') as dataset:
-        data = json.load(dataset)
-
+def find_replacement(name,data):
         # get highest price version
         best_price = 0.0
         best_item = None
@@ -62,14 +61,20 @@ def load_deck(path):
         lines = [line.rstrip().split(" ", 2) for line in deck]
         return lines
     
-def write_deck(decklist):
-    with open('output.dck', "w") as deck:
+def write_deck(decklist,path):
+    with open(path, "w") as deck:
         for line in decklist:
             deck.write(" ".join(line) + "\n")
 
 
 if __name__ == "__main__":
-    fileread = load_deck('input.dck')
+    parser = argparse.ArgumentParser(description="Make a DCK file as expensive as it can be")
+    parser.add_argument('-i', '--input', help='Path to input dck.', type=str, required=True)
+    parser.add_argument('-o', '--output', help='Path to output dck.', type=str, required=True)
+    args = parser.parse_args()
+
+
+    fileread = load_deck(args.input)
     layout_lines = []
     decklist = []
     total_cost = 0.0
@@ -80,13 +85,15 @@ if __name__ == "__main__":
         if len(line) == 2 and line[0] == "LAYOUT": # grab layout lines for later
             layout_lines.append(line)
 
-    for card in decklist:
-        r, p = find_replacement(card[2])
-        total_cost += p
-        if r != None:
-            card[1] = "[" + r["set"].upper() + ":" + r["collector_number"] + "]"
+    with open('/storage/datasets/mtg-tcg/all-cards.json') as dataset:
+        data = json.load(dataset)
+        for card in decklist:
+            r, p = find_replacement(card[2],data)
+            total_cost += p
+            if r != None:
+                card[1] = "[" + r["set"].upper() + ":" + r["collector_number"] + "]"
 
     # Prepare for export
     #decklist.append(layout_lines)
-    write_deck(decklist)
+    write_deck(decklist,args.output)
     print("Total Deck Cost: $" + str(total_cost))
