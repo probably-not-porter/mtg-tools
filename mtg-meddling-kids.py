@@ -1,13 +1,13 @@
 # Search for best words for Meddling Kids
 # https://gatherer.wizards.com/pages/card/Discussion.aspx?multiverseid=74347
-# python3 mtg-abc.py -i /storage/datasets/mtg-tcg/all-cards.json
+# python3 mtg-meddling-kids.py -i /storage/datasets/mtg-tcg/all-cards.json
 import json
 from tqdm import tqdm
 import argparse
 import re
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Search for combos for Now I Know My ABC's.")
+    parser = argparse.ArgumentParser(description="Search for combos for Meddling Kids.")
     parser.add_argument('-i', '--input', help='Path to input dataset.', type=str)
 
     args = parser.parse_args()
