@@ -1,4 +1,4 @@
-# Get a price from Scryfall for card by name
+// Get a price from Scryfall for card by name
 function SCRYFALL_PRICE(name) {
   var price = IMPORTJSON("https://api.scryfall.com/cards/named?fuzzy="+name, "prices/usd");
 
