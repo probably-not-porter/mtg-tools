@@ -6,6 +6,8 @@ def find_replacement(name,data):
         # get highest price version
         best_price = 0.0
         best_item = None
+        worst_price = 12345678
+        worst_item = None
 
         # list best printings
         item_list = []
@@ -33,7 +35,27 @@ def find_replacement(name,data):
                     if float(item['prices']['eur_foil']) > best_price:
                         best_price  = float(item['prices']['eur_foil'])
                         best_item = item
-        
+
+                        # Find item with wrost price
+                if item['prices']['usd'] != None:
+                    if float(item['prices']['usd']) < worst_price:
+                        worst_price  = float(item['prices']['usd'])
+                        worst_item = item
+                if item['prices']['eur'] != None:
+                    if float(item['prices']['eur'])< worst_price:
+                        worst_price  = float(item['prices']['eur'])
+                        worst_item = item
+                if item['prices']['usd_foil'] != None:
+                    if float(item['prices']['usd_foil']) < worst_price:
+                        worst_price  = float(item['prices']['usd_foil'])
+                        worst_item = item
+                if item['prices']['eur_foil'] != None:
+                    if float(item['prices']['eur_foil']) < worst_price:
+                        worst_price  = float(item['prices']['eur_foil'])
+                        worst_item = item
+        if worst_price == 12345678:
+            worst_price = 0
+
         # check different printings for fullart, etc
         item_list_fullart = []
         item_list_textless = []
@@ -49,12 +71,13 @@ def find_replacement(name,data):
         # Output
         print("---- " + name + " ----")
         print("Most expensive print of " + name + " is $" + str(best_price))
+        print("Least expensive print of " + name + " is $" + str(worst_price))
         print("Total copies: " + str(len(item_list)))
         print("Fullart copies: " + str(len(item_list_fullart)))
         print("Textless copies: " + str(len(item_list_textless)))
         print("Promo copies: " + str(len(item_list_promo)))
         print("\n")
-        return (best_item, best_price)
+        return (best_item, best_price, worst_item, worst_price)
 
 def load_deck(path):
     with open(path) as deck:
@@ -78,6 +101,7 @@ if __name__ == "__main__":
     layout_lines = []
     decklist = []
     total_cost = 0.0
+    min_cost = 0.0
 
     for line in fileread:
         if len(line) == 3 and line[0].isnumeric():
@@ -88,12 +112,14 @@ if __name__ == "__main__":
     with open('/storage/datasets/mtg-tcg/all-cards.json') as dataset:
         data = json.load(dataset)
         for card in decklist:
-            r, p = find_replacement(card[2],data)
+            r, p, r2, p2 = find_replacement(card[2],data)
             total_cost += p
+            min_cost += p2
             if r != None:
                 card[1] = "[" + r["set"].upper() + ":" + r["collector_number"] + "]"
 
     # Prepare for export
     #decklist.append(layout_lines)
     write_deck(decklist,args.output)
-    print("Total Deck Cost: $" + str(total_cost))
+    print("Maximum possible Deck Cost: $" + str(total_cost))
+    print("Minimum possible Deck Cost: $" + str(min_cost))

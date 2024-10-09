@@ -1,5 +1,6 @@
-# Search for best words for Meddling Kids
 # https://gatherer.wizards.com/pages/card/Discussion.aspx?multiverseid=74347
+
+# Search for best words for Meddling Kids
 # python3 mtg-meddling-kids.py -i /storage/datasets/mtg-tcg/all-cards.json
 import json
 from tqdm import tqdm

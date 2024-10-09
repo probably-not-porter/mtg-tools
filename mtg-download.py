@@ -1,3 +1,5 @@
+# Download all sets of card data from scryfall API.
+# python3 mtg-download.py -o /storage/datasets/mtg-tcg/
 import urllib.request, json 
 from tqdm import tqdm
 import argparse
