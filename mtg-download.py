@@ -13,13 +13,19 @@ if __name__ == '__main__':
     path = args.output
     if path[:-1] != "/":
         path += "/"
-
-    with urllib.request.urlopen("https://api.scryfall.com/bulk-data") as url:
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+    }
+    req = urllib.request.Request("https://api.scryfall.com/bulk-data", headers=headers)
+    with urllib.request.urlopen(req) as url:
         data = json.load(url)
         for item in data['data']:
             name = item['name'].lower() + ".json"
             print("Downloading " + name + "...")
-            with urllib.request.urlopen(item['download_uri']) as url2:
+            download_req = urllib.request.Request(item['download_uri'], headers=headers)
+            with urllib.request.urlopen(download_req) as url2:
                 data2 = json.load(url2)
                 with open(path + name.replace(" ", "-"), 'w') as f:
                     json.dump(data2, f)
