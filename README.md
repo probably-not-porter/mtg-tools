@@ -1,34 +1,24 @@
-# Misc MTG Scripts
-Some other mtg related scripts and bits.
+# MTG Data Science
+Some mtg related scripts and bits, thrown together over time. 
+
+<img src='https://cards.scryfall.io/large/front/9/f/9ff71d13-c4b7-4125-ab10-db4abbb7a074.jpg?1562382082' height=100px>
+
+## Some Loose Organization
+- [Deck Modifiers](deck_modifiers/README.md) - Scripts that edit `.dck` files or similar.
+- [Single Card Optimization](single-card-optimization/README.md) - Scripts that try to algorithmically optimize for a specific card (best combos, most useful cards, etc).
+- [Analysis](analysis/README.md) - Scripts and notebooks to try and visualize interesting data, trends, patterns in cards.
+- [Google Sheet Scripts](google_sheets/README.md) - A few scripts that can be used in Google Appscript to pull scryfall data into a sheet with functions.
 
 ## `mtg-download.py`
-Locate and download the newest bulk data from Scryfall.
-
-`all-cards.json`  `default-cards.json`  `oracle-cards.json`  `rulings.json`  `unique-artwork.json`
+A tool to locate and download the newest bulk data from Scryfall.
+Files: `all-cards.json`, `default-cards.json`, `oracle-cards.json`, `rulings.json`, `unique-artwork.json`
 
 
 ```sh
 python3 mtg-download.py -o /storage/datasets/mtg-tcg
 ```
 
-## `mtg-abc.py`
-Find the best combos for Now I Know My ABC's. Attempts to score every card based on the rarity of the letters its name contains, then match them up to create full alphabets. Includes letters from "Now I Know My ABC's" by default. WARNING: This can take a long time if you use a gigantic `v` value.
-```sh
-python3 mtg-abc.py \
-  -i /storage/datasets/mtg-tcg/oracle-cards.json \
-  -n 10 \
-  -v 1000000 \
-  -m 5 \
-  -c W U B R G
-```
-## `mtg-meddling-kids.py`
-Find the most common words on all cards. Works best with the "all-cards" dataset. 
-```sh
-python3 mtg-abc.py -i /storage/datasets/mtg-tcg/all-cards.json
-```
-
-
-# Sample Card
+## Sample Card
 
 ```json
 {

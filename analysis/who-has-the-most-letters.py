@@ -1,7 +1,7 @@
 # https://gatherer.wizards.com/pages/card/Details.aspx?multiverseid=73959
 
 # Search for combos for Now I Know My ABCs
-# python3 mtg-abc.py -i /storage/datasets/mtg-tcg/all-cards.json
+# python3 who-has-the-most-letters.py -i /storage/datasets/mtg-tcg/oracle-cards.json
 import json
 from tqdm import tqdm
 import argparse

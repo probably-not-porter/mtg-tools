@@ -43,7 +43,7 @@ def filter_data(data, cmcmax, colors):
     outdata = []
     for item in data:
         if ispermanent(item) and item["cmc"] <= cmcmax:
-             if set(item['color_identity']) <= set(colors):
+            if set(item['color_identity']) <= set(colors):
                 if "//" not in item['name']:                # maybe 
                     outdata.append(item)
     return outdata
@@ -160,12 +160,20 @@ def find_triple(scores,n):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Search for combos for Now I Know My ABC's.")
-    parser.add_argument('-i', '--input', help='Path to input dataset.', type=str)
-    parser.add_argument('-n', '--num', help='Number of results to generate in each catagory.', type=int)
-    parser.add_argument('-v', '--volume', help='Volume of results to check.', type=int)
-    parser.add_argument('-m', '--maxcmc', help='Maximum CMC of cards to search for.', type=int)
-    parser.add_argument('-c', '--colors', help='Color of cards to search for.', nargs='+', default=[])
+    parser.add_argument('-i', '--input', help='Path to input dataset.', type=str, required=True)
+    parser.add_argument('-n', '--num', help='Number of results to generate in each catagory.', type=int, default=3)
+    parser.add_argument('-v', '--volume', help='Volume of results to check.', type=int, default=1000000)
+    parser.add_argument('-m', '--maxcmc', help='Maximum CMC of cards to search for.', type=int, default=10)
+    parser.add_argument('-c', '--colors', help='Color of cards to search for.', nargs='+', default=['U','W','B','R','G'])
     args = parser.parse_args()
+
+    print(f"┌─ SETTINGS ─────")
+    print(f'├─ Dataset (-i): {args.input}')
+    print(f'├─ Number of results (-n): {args.num}')
+    print(f'├─ Volume of combos to check (-v): {args.volume}')
+    print(f'├─ Max CMC to check (-m): {args.maxcmc}')
+    print(f'├─ Colors to check (-c): {args.colors}')
+    print(f'├────────────────')
 
     if args.volume != None:
         MAX_SEARCH = args.volume
