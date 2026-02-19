@@ -1,13 +1,13 @@
-# MTG Data Science
+# MtG Data Science
 Some mtg related scripts and bits, thrown together over time. 
 
 <img src='https://cards.scryfall.io/large/front/9/f/9ff71d13-c4b7-4125-ab10-db4abbb7a074.jpg?1562382082' height=100px>
 
 ## Some Loose Organization
-- [Deck Modifiers](deck_modifiers/README.md) - Scripts that edit `.dck` files or similar.
-- [Single Card Optimization](single-card-optimization/README.md) - Scripts that try to algorithmically optimize for a specific card (best combos, most useful cards, etc).
-- [Analysis](analysis/README.md) - Scripts and notebooks to try and visualize interesting data, trends, patterns in cards.
-- [Google Sheet Scripts](google_sheets/README.md) - A few scripts that can be used in Google Appscript to pull scryfall data into a sheet with functions.
+- [Deck Modifiers](deck_modifiers/) - Scripts that edit `.dck` files or similar.
+- [Single Card Optimization](single-card-optimization/) - Scripts that try to algorithmically optimize for a specific card (best combos, most useful cards, etc).
+- [Analysis](analysis/) - Scripts and notebooks to try and visualize interesting data, trends, patterns in cards.
+- [Google Sheet Scripts](google_sheets/) - A few scripts that can be used in Google Appscript to pull scryfall data into a sheet with functions.
 
 ## `mtg-download.py`
 A tool to locate and download the newest bulk data from Scryfall.
