@@ -19,7 +19,9 @@ def main(path):
                         type_dict[t] += 1
     sorted_data = dict(sorted(type_dict.items(), key=lambda x: x[1], reverse=True))
     for key, value in list(sorted_data.items()):
-        print(f"{key}: {value}")
+        if int(value) > 100:
+            print("{",f'"cat": "subtype", "value": "{key}"',"},")
+        #print(f"{key}: {value}")
 
 
 if __name__ == '__main__':
