@@ -7,7 +7,8 @@ from tqdm import tqdm
 
 # --- CONFIGURATION ---
 MIN_CARDS_PER_CELL = 1
-DB_PATH = "mtg_grids.db"
+DB_PATH = "mtg_relational_grids.db"
+BATCH_SIZE = 50000 
 
 opt = [
     {"cat": "color", "value": "W"}, {"cat": "color", "value": "U"},
@@ -57,13 +58,12 @@ opt = [
     {"cat": "subtype", "value": "Nightmare"}, {"cat": "subtype", "value": "Wolf"}
 ]
 
-# --- DATA LOADING ---
+# --- 1. DATA PREP ---
 print("Loading dataset...")
 df = pd.DataFrame(json.load(open("/storage/datasets/mtg-tcg/oracle-cards.json")))
 
 cat_sets = {}
-print("Building category sets...")
-for item in tqdm(opt):
+for item in tqdm(opt, desc="Building Sets"):
     key = f"{item['cat']}_{item['value']}"
     if item['cat'] == 'color':
         cat_sets[key] = set(df[df['colors'].apply(lambda x: isinstance(x, list) and item['value'] in x)]['name'])
@@ -74,8 +74,6 @@ for item in tqdm(opt):
 
 n = len(opt)
 matrix = np.zeros((n, n), dtype=bool)
-
-print("Building Intersection Matrix...")
 for i in range(n):
     for j in range(i, n):
         k1, k2 = f"{opt[i]['cat']}_{opt[i]['value']}", f"{opt[j]['cat']}_{opt[j]['value']}"
@@ -85,72 +83,78 @@ for i in range(n):
 def is_axis_valid(group_indices):
     cats = [opt[i]['cat'] for i in group_indices]
     for c in set(cats):
-        if cats.count(c) > 1 and c not in ['subtype', 'type', 'color']:
-            return False
+        if cats.count(c) > 1 and c in ['cmc']: return False
     return True
 
-def save_to_sqlite(grids):
-    print(f"Saving {len(grids):,} results to {DB_PATH}...")
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    
-    # Create table
-    cursor.execute("DROP TABLE IF EXISTS valid_grids")
-    cursor.execute("""
-        CREATE TABLE valid_grids (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            r1 TEXT, r2 TEXT, r3 TEXT,
-            c1 TEXT, c2 TEXT, c3 TEXT
-        )
-    """)
-    
-    # Batch insert for speed
-    cursor.executemany("""
-        INSERT INTO valid_grids (r1, r2, r3, c1, c2, c3) 
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, grids)
-    
-    conn.commit()
-    conn.close()
-    print("Done!")
+# --- 2. DATABASE INITIALIZATION ---
+conn = sqlite3.connect(DB_PATH)
+cursor = conn.cursor()
+cursor.execute("PRAGMA synchronous = OFF") # Speed boost for massive inserts
+cursor.execute("PRAGMA journal_mode = MEMORY")
 
-def find_and_store_grids():
-    raw_candidates = list(combinations(range(len(opt)), 3))
-    filtered = [c for c in raw_candidates if is_axis_valid(c)]
-    
-    batch_results = []
-    print(f"Searching {len(filtered)**2:,} combinations...")
+cursor.executescript("""
+    DROP TABLE IF EXISTS categories;
+    DROP TABLE IF EXISTS trios;
+    DROP TABLE IF EXISTS compatible_pairs;
 
-    for r in tqdm(filtered):
-        for c in filtered:
-            if set(r) & set(c): continue
+    CREATE TABLE categories (id INTEGER PRIMARY KEY, cat TEXT, value TEXT);
+    CREATE TABLE trios (id INTEGER PRIMARY KEY, c1_idx INT, c2_idx INT, c3_idx INT);
+    CREATE TABLE compatible_pairs (row_trio_id INT, col_trio_id INT);
+""")
+
+# Store Categories
+cursor.executemany("INSERT INTO categories VALUES (?, ?, ?)", 
+                   [(i, x['cat'], str(x['value'])) for i, x in enumerate(opt)])
+
+# Store Valid Trios
+raw_trios = list(combinations(range(len(opt)), 3))
+valid_trios = [t for t in raw_trios if is_axis_valid(t)]
+cursor.executemany("INSERT INTO trios (id, c1_idx, c2_idx, c3_idx) VALUES (?, ?, ?, ?)", 
+                   [(i, t[0], t[1], t[2]) for i, t in enumerate(valid_trios)])
+conn.commit()
+
+# --- 3. EFFICIENT GRID SOLVER ---
+def find_and_store_pairs():
+    batch = []
+    total_saved = 0
+    
+    print(f"Finding compatible pairs among {len(valid_trios):,} trios...")
+    for r_id, r_trio in enumerate(tqdm(valid_trios)):
+        for c_id, c_trio in enumerate(valid_trios):
+            # 1. Axis Overlap Check
+            if set(r_trio) & set(c_trio): continue
             
+            # 2. Mutually Exclusive Categories (CMC vs CMC)
             conflict = False
-            exclusive = ['cmc'] 
-            for r_idx in r:
-                for c_idx in c:
-                    if opt[r_idx]['cat'] == opt[c_idx]['cat'] and opt[r_idx]['cat'] in exclusive:
-                        conflict = True
-                        break
+            for ri in r_trio:
+                for ci in c_trio:
+                    if opt[ri]['cat'] == opt[ci]['cat'] and opt[ri]['cat'] == 'cmc':
+                        conflict = True; break
                 if conflict: break
-            
             if conflict: continue
 
-            if (matrix[r[0], c[0]] and matrix[r[0], c[1]] and matrix[r[0], c[2]] and
-                matrix[r[1], c[0]] and matrix[r[1], c[1]] and matrix[r[1], c[2]] and
-                matrix[r[2], c[0]] and matrix[r[2], c[1]] and matrix[r[2], c[2]]):
+            # 3. Fast Matrix Check (All 9 cells must be True)
+            if (matrix[r_trio[0], c_trio[0]] and matrix[r_trio[0], c_trio[1]] and matrix[r_trio[0], c_trio[2]] and
+                matrix[r_trio[1], c_trio[0]] and matrix[r_trio[1], c_trio[1]] and matrix[r_trio[1], c_trio[2]] and
+                matrix[r_trio[2], c_trio[0]] and matrix[r_trio[2], c_trio[1]] and matrix[r_trio[2], c_trio[2]]):
                 
-                # We store the raw strings for the database
-                batch_results.append((
-                    f"{opt[r[0]]['cat']}:{opt[r[0]]['value']}",
-                    f"{opt[r[1]]['cat']}:{opt[r[1]]['value']}",
-                    f"{opt[r[2]]['cat']}:{opt[r[2]]['value']}",
-                    f"{opt[c[0]]['cat']}:{opt[c[0]]['value']}",
-                    f"{opt[c[1]]['cat']}:{opt[c[1]]['value']}",
-                    f"{opt[c[2]]['cat']}:{opt[c[2]]['value']}"
-                ))
-                
-    save_to_sqlite(batch_results)
+                batch.append((r_id, c_id))
 
-# --- EXECUTION ---
-find_and_store_grids()
+                if len(batch) >= BATCH_SIZE:
+                    cursor.executemany("INSERT INTO compatible_pairs VALUES (?, ?)", batch)
+                    conn.commit()
+                    total_saved += len(batch)
+                    batch = []
+
+    if batch:
+        cursor.executemany("INSERT INTO compatible_pairs VALUES (?, ?)", batch)
+        conn.commit()
+        total_saved += len(batch)
+    
+    # Create an index for lightning fast random queries
+    print("Creating index...")
+    cursor.execute("CREATE INDEX idx_pairs ON compatible_pairs(row_trio_id, col_trio_id)")
+    conn.close()
+    print(f"Finished! Total compatible pairs saved: {total_saved:,}")
+
+find_and_store_pairs()
